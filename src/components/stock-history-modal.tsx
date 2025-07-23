@@ -46,12 +46,6 @@ export function StockHistoryModal({
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open && productId) {
-      fetchHistory();
-    }
-  }, [open, productId, fetchHistory]);
-
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
@@ -66,6 +60,12 @@ export function StockHistoryModal({
       setLoading(false);
     }
   }, [productId]);
+
+  useEffect(() => {
+    if (open && productId) {
+      fetchHistory();
+    }
+  }, [open, productId, fetchHistory]);
 
   const formatMovementType = (type: string) => {
     switch (type) {

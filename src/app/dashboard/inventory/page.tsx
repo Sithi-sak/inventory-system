@@ -25,31 +25,15 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
-  CircleAlertIcon,
   CircleXIcon,
   Columns3Icon,
-  EllipsisIcon,
   FilterIcon,
   ListFilterIcon,
-  PlusIcon,
-  TrashIcon,
   HistoryIcon,
   PackageIcon,
-  TruckIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { StockMovementModal } from "@/components/stock-movement-modal";
 import { StockHistoryModal } from "@/components/stock-history-modal";
 import {
@@ -63,10 +47,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -495,12 +476,12 @@ export default function Page() {
     ]);
   }, [data]);
 
+  const totalStockFilterValue = table.getColumn("totalStock")?.getFilterValue();
+  
   const selectedStockStatuses = useMemo(() => {
-    const filterValue = table
-      .getColumn("totalStock")
-      ?.getFilterValue() as string[];
+    const filterValue = totalStockFilterValue as string[];
     return filterValue ?? [];
-  }, [table.getColumn("totalStock")?.getFilterValue(), table]);
+  }, [totalStockFilterValue, table]);
 
   const handleStockStatusChange = (checked: boolean, value: string) => {
     const filterValue = table

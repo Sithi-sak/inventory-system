@@ -418,10 +418,12 @@ export default function Page() {
     ]);
   }, [data]);
 
+  const stockFilterValue = table.getColumn("stock")?.getFilterValue();
+  
   const selectedStockStatuses = useMemo(() => {
-    const filterValue = table.getColumn("stock")?.getFilterValue() as string[];
+    const filterValue = stockFilterValue as string[];
     return filterValue ?? [];
-  }, [table.getColumn("stock")?.getFilterValue(), table]);
+  }, [stockFilterValue, table]);
 
   const handleStockStatusChange = (checked: boolean, value: string) => {
     const filterValue = table.getColumn("stock")?.getFilterValue() as string[];

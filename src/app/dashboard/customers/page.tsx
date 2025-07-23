@@ -8,9 +8,6 @@ import {
   FilterFn,
   flexRender,
   getCoreRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   PaginationState,
   Row,
@@ -168,7 +165,6 @@ export default function Page() {
 
   const [data, setData] = useState<Item[]>([]);
   const [editingCustomer, setEditingCustomer] = useState<Item | null>(null);
-  const [loading, setLoading] = useState(true);
   const [paginationInfo, setPaginationInfo] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -181,7 +177,6 @@ export default function Page() {
 
   const fetchCustomers = useCallback(async (searchFilters?: { name?: string; status?: string[] }) => {
     try {
-      setLoading(true);
       
       // Build query parameters
       const searchParams = new URLSearchParams({
@@ -208,8 +203,6 @@ export default function Page() {
       }
     } catch (error) {
       console.error("Error fetching customers:", error);
-    } finally {
-      setLoading(false);
     }
   }, [pagination.pageIndex, pagination.pageSize, hideDelivered]);
 
@@ -537,7 +530,6 @@ export default function Page() {
         const hasDeliveredOrder = row.original.orders.some(order => order.status === "delivered");
         return (
           <RowActions
-            row={row}
             onEdit={() => setEditingCustomer(row.original)}
             onDelete={() => handleDeleteCustomer(row.original.id)}
             hasDeliveredOrder={hasDeliveredOrder}
@@ -573,10 +565,13 @@ export default function Page() {
   });
 
   // Debounced search effect (runs after table is created)
+  const nameFilterValue = table.getColumn("name")?.getFilterValue();
+  const statusFilterValue = table.getColumn("status")?.getFilterValue();
+  
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const nameFilter = table.getColumn("name")?.getFilterValue() as string;
-      const statusFilter = table.getColumn("status")?.getFilterValue() as string[];
+      const nameFilter = nameFilterValue as string;
+      const statusFilter = statusFilterValue as string[];
       
       fetchCustomers({
         name: nameFilter,
@@ -585,7 +580,7 @@ export default function Page() {
     }, 300); // 300ms debounce
     
     return () => clearTimeout(timeoutId);
-  }, [table.getColumn("name")?.getFilterValue(), table.getColumn("status")?.getFilterValue(), fetchCustomers, table]);
+  }, [nameFilterValue, statusFilterValue, fetchCustomers, table]);
 
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;
@@ -635,9 +630,9 @@ export default function Page() {
   }, [data]);
 
   const selectedStatuses = useMemo(() => {
-    const filterValue = table.getColumn("status")?.getFilterValue() as string[];
+    const filterValue = statusFilterValue as string[];
     return filterValue ?? [];
-  }, [table.getColumn("status")?.getFilterValue(), table]);
+  }, [statusFilterValue, table]);
 
   const handleStatusChange = (checked: boolean, value: string) => {
     const filterValue = table.getColumn("status")?.getFilterValue() as string[];
@@ -1066,12 +1061,10 @@ export default function Page() {
 }
 
 function RowActions({
-  row,
   onEdit,
   onDelete,
   hasDeliveredOrder,
 }: {
-  row: Row<Item>;
   onEdit: () => void;
   onDelete: () => void;
   hasDeliveredOrder: boolean;
