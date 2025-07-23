@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT() {
   try {
     const defaultLocations = [
       { name: "My Warehouse", description: "Main warehouse storage" },

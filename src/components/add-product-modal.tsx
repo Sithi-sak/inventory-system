@@ -73,7 +73,7 @@ export function AddProductModal({ onAddProduct }: AddProductModalProps) {
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
           <DialogDescription>
-            Enter the product details below. Click save when you're done.
+            Enter the product details below. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

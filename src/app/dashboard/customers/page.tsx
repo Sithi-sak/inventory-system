@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, useEffect } from "react";
+import { useId, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { useTitle } from "@/lib/use-title";
 import {
   ColumnDef,
@@ -179,7 +179,7 @@ export default function Page() {
   });
   const [hideDelivered, setHideDelivered] = useState(true); // Default to hiding delivered orders
 
-  const fetchCustomers = async (searchFilters?: { name?: string; status?: string[] }) => {
+  const fetchCustomers = useCallback(async (searchFilters?: { name?: string; status?: string[] }) => {
     try {
       setLoading(true);
       
@@ -211,12 +211,12 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.pageIndex, pagination.pageSize, hideDelivered]);
 
   // Initial load and when pagination/hideDelivered changes
   useEffect(() => {
     fetchCustomers();
-  }, [pagination.pageIndex, pagination.pageSize, hideDelivered]);
+  }, [pagination.pageIndex, pagination.pageSize, hideDelivered, fetchCustomers]);
 
   const handleAddCustomer = async (customer: {
     name: string;
@@ -585,7 +585,7 @@ export default function Page() {
     }, 300); // 300ms debounce
     
     return () => clearTimeout(timeoutId);
-  }, [table.getColumn("name")?.getFilterValue(), table.getColumn("status")?.getFilterValue()]);
+  }, [table.getColumn("name")?.getFilterValue(), table.getColumn("status")?.getFilterValue(), fetchCustomers, table]);
 
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;
@@ -637,7 +637,7 @@ export default function Page() {
   const selectedStatuses = useMemo(() => {
     const filterValue = table.getColumn("status")?.getFilterValue() as string[];
     return filterValue ?? [];
-  }, [table.getColumn("status")?.getFilterValue()]);
+  }, [table.getColumn("status")?.getFilterValue(), table]);
 
   const handleStatusChange = (checked: boolean, value: string) => {
     const filterValue = table.getColumn("status")?.getFilterValue() as string[];

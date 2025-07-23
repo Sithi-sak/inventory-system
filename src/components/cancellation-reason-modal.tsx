@@ -63,7 +63,7 @@ export function CancellationReasonModal({
         <DialogHeader>
           <DialogTitle>Cancel Order</DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Please provide a reason for canceling <span className="font-medium">{customerName}</span>'s order.
+            Please provide a reason for canceling <span className="font-medium">{customerName}</span>&apos;s order.
           </p>
         </DialogHeader>
 
@@ -110,7 +110,7 @@ export function CancellationReasonModal({
                 Hold inventory return (awaiting physical confirmation)
               </Label>
               <p className="text-xs text-muted-foreground">
-                Keep stock in "In Transit" until you manually confirm the product has been physically returned
+                Keep stock in &quot;In Transit&quot; until you manually confirm the product has been physically returned
               </p>
             </div>
           </div>

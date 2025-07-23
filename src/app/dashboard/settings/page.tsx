@@ -192,7 +192,7 @@ export default function SettingsPage() {
             <CardTitle>Emergency Password Reset</CardTitle>
           </div>
           <CardDescription>
-            Forgot your password? Reset it to a temporary password. Use this only if you've forgotten your current password.
+            Forgot your password? Reset it to a temporary password. Use this only if you&apos;ve forgotten your current password.
           </CardDescription>
         </CardHeader>
         <CardContent>

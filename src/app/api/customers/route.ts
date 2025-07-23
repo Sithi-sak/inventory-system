@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@/generated/prisma'
+
+interface OrderItem {
+  productId: string
+  quantity: string
+  unitPrice: string
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +23,7 @@ export async function GET(request: NextRequest) {
     const hideDelivered = searchParams.get('hideDelivered') === 'true'
     
     // Build where clause for filtering
-    const whereClause: any = {}
+    const whereClause: Prisma.CustomerWhereInput = {}
     
     // Search by name or phone
     if (search) {
@@ -121,7 +128,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (orderItems && orderItems.length > 0) {
-      const totalAmount = orderItems.reduce((sum: number, item: any) => {
+      const totalAmount = orderItems.reduce((sum: number, item: OrderItem) => {
         return sum + (parseFloat(item.unitPrice) * parseInt(item.quantity))
       }, 0)
 
@@ -132,7 +139,7 @@ export async function POST(request: NextRequest) {
             totalAmount: totalAmount,
             status: 'pending',
             orderItems: {
-              create: orderItems.map((item: any) => ({
+              create: orderItems.map((item: OrderItem) => ({
                 productId: item.productId,
                 quantity: parseInt(item.quantity),
                 unitPrice: parseFloat(item.unitPrice)

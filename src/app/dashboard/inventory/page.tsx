@@ -500,7 +500,7 @@ export default function Page() {
       .getColumn("totalStock")
       ?.getFilterValue() as string[];
     return filterValue ?? [];
-  }, [table.getColumn("totalStock")?.getFilterValue()]);
+  }, [table.getColumn("totalStock")?.getFilterValue(), table]);
 
   const handleStockStatusChange = (checked: boolean, value: string) => {
     const filterValue = table

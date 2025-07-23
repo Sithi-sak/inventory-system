@@ -70,10 +70,6 @@ export async function GET() {
       })
     ])
 
-    // Calculate changes
-    const orderChange = orderStats.lastMonthOrders === 0 
-      ? 100 
-      : Math.round(((orderStats.currentMonthOrders - orderStats.lastMonthOrders) / orderStats.lastMonthOrders) * 100)
 
     const stats = [
       {

@@ -83,7 +83,7 @@ export function EditProductModal({ product, open, onOpenChange, onUpdateProduct 
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
           <DialogDescription>
-            Update the product details below. Click save when you're done.
+            Update the product details below. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

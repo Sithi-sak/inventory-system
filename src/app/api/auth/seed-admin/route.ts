@@ -20,7 +20,7 @@ export async function POST() {
     const defaultPassword = 'admin123'
     const hashedPassword = await bcrypt.hash(defaultPassword, 12)
 
-    const admin = await prisma.admin.create({
+    await prisma.admin.create({
       data: {
         id: 1,
         password: hashedPassword

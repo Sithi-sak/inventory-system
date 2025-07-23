@@ -211,7 +211,7 @@ export function AddCustomerModal({ onAddCustomer }: AddCustomerModalProps) {
         <DialogHeader>
           <DialogTitle>Add New Customer</DialogTitle>
           <DialogDescription>
-            Enter the customer details below. Click save when you're done.
+            Enter the customer details below. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

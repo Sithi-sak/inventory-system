@@ -421,7 +421,7 @@ export default function Page() {
   const selectedStockStatuses = useMemo(() => {
     const filterValue = table.getColumn("stock")?.getFilterValue() as string[];
     return filterValue ?? [];
-  }, [table.getColumn("stock")?.getFilterValue()]);
+  }, [table.getColumn("stock")?.getFilterValue(), table]);
 
   const handleStockStatusChange = (checked: boolean, value: string) => {
     const filterValue = table.getColumn("stock")?.getFilterValue() as string[];

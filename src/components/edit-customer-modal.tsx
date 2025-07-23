@@ -225,7 +225,7 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
         <DialogHeader>
           <DialogTitle>Edit Customer</DialogTitle>
           <DialogDescription>
-            Update the customer details below. Click save when you're done.
+            Update the customer details below. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

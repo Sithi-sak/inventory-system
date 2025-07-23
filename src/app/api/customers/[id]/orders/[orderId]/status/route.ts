@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { PrismaClient } from '@/generated/prisma'
 
 export async function PUT(
   request: NextRequest,
@@ -121,7 +122,7 @@ export async function PUT(
 }
 
 // Helper function to move stock between locations
-async function moveStock(tx: any, productId: string, fromLocationId: string, toLocationId: string, quantity: number, notes: string) {
+async function moveStock(tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$executeRaw' | '$executeRawUnsafe' | '$queryRaw' | '$queryRawUnsafe'>, productId: string, fromLocationId: string, toLocationId: string, quantity: number, notes: string) {
   // Check if source location has enough stock
   const fromInventory = await tx.inventoryItem.findUnique({
     where: {
@@ -185,7 +186,7 @@ async function moveStock(tx: any, productId: string, fromLocationId: string, toL
 }
 
 // Helper function to deduct stock (for delivered orders)
-async function deductStock(tx: any, productId: string, locationId: string, quantity: number, notes: string) {
+async function deductStock(tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$executeRaw' | '$executeRawUnsafe' | '$queryRaw' | '$queryRawUnsafe'>, productId: string, locationId: string, quantity: number, notes: string) {
   // Check if location has enough stock
   const inventory = await tx.inventoryItem.findUnique({
     where: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -50,9 +50,9 @@ export function StockHistoryModal({
     if (open && productId) {
       fetchHistory();
     }
-  }, [open, productId]);
+  }, [open, productId, fetchHistory]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/inventory/${productId}/history`);
@@ -65,7 +65,7 @@ export function StockHistoryModal({
     } finally {
       setLoading(false);
     }
-  };
+  }, [productId]);
 
   const formatMovementType = (type: string) => {
     switch (type) {

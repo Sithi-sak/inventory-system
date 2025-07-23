@@ -14,7 +14,7 @@ export async function POST() {
     }
 
     // Create default inventory locations
-    const locations = await prisma.inventoryLocation.createMany({
+    await prisma.inventoryLocation.createMany({
       data: [
         {
           name: 'Production',

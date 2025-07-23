@@ -13,8 +13,15 @@ interface OrderStatusChartProps {
   data: StatusData[]
 }
 
+interface TooltipProps {
+  active?: boolean
+  payload?: Array<{
+    payload: StatusData
+  }>
+}
+
 // Custom tooltip component that respects dark mode
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: TooltipProps) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload
     return (

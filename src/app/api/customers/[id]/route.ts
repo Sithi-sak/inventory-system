@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+interface OrderItem {
+  productId: string
+  quantity: string
+  unitPrice: string
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -46,7 +52,7 @@ export async function PUT(
           })
 
           // Calculate new total
-          const totalAmount = orderItems.reduce((sum: number, item: any) => {
+          const totalAmount = orderItems.reduce((sum: number, item: OrderItem) => {
             return sum + (parseFloat(item.unitPrice) * parseInt(item.quantity))
           }, 0)
 
@@ -58,7 +64,7 @@ export async function PUT(
 
           // Create new order items
           await tx.orderItem.createMany({
-            data: orderItems.map((item: any) => ({
+            data: orderItems.map((item: OrderItem) => ({
               orderId: latestOrder.id,
               productId: item.productId,
               quantity: parseInt(item.quantity),
