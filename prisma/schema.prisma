@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 model Customer {
@@ -33,9 +34,9 @@ model Order {
   status             String    @default("pending")
   totalAmount        Decimal   @db.Decimal(10, 2)
   notes              String?
-  cancellationReason String?   // Reason for cancellation if status is cancelled
-  cancellationNotes  String?   // Additional notes about cancellation
-  holdReturn         Boolean?  // Whether to hold inventory return for manual confirmation
+  cancellationReason String? // Reason for cancellation if status is cancelled
+  cancellationNotes  String? // Additional notes about cancellation
+  holdReturn         Boolean? // Whether to hold inventory return for manual confirmation
 
   customer      Customer        @relation(fields: [customerId], references: [id])
   orderItems    OrderItem[]
