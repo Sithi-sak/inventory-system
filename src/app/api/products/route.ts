@@ -62,6 +62,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name, code, and price are required' }, { status: 400 })
     }
 
+    // Auto-create default locations if they don't exist
+    const defaultLocations = [
+      { name: "Fulfillment", description: "Ready for delivery" },
+      { name: "In Transit", description: "Currently being delivered" },
+      { name: "Production", description: "Manufacturing/Production area" }
+    ];
+
+    for (const defaultLocation of defaultLocations) {
+      await prisma.inventoryLocation.upsert({
+        where: { name: defaultLocation.name },
+        update: {},
+        create: {
+          name: defaultLocation.name,
+          description: defaultLocation.description,
+          isActive: true
+        }
+      });
+    }
+
+    // Get all active locations
+    const locations = await prisma.inventoryLocation.findMany({
+      where: { isActive: true }
+    });
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -70,6 +94,19 @@ export async function POST(request: NextRequest) {
         description: description || null,
       }
     })
+
+    // Create inventory items for all locations with 0 quantity
+    await Promise.all(
+      locations.map(location =>
+        prisma.inventoryItem.create({
+          data: {
+            productId: product.id,
+            locationId: location.id,
+            quantity: 0
+          }
+        })
+      )
+    );
 
     return NextResponse.json(product, { status: 201 })
   } catch (error) {
