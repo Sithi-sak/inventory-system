@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id                    String   @id @default(cuid())
+  name                  String
+  phone                 String
+  location              String
+  preferredDeliveryTime String?
+  notes                 String?
+  createdAt             DateTime @default(now())
+
+  orders Order[]
+
+  // Indexes for performance
+  @@index([name])
+  @@index([phone])
+  @@index([createdAt])
+}
+
+model Order {
+  id                 String    @id @default(cuid())
+  customerId         String
+  orderDate          DateTime  @default(now())
+  deliveryDate       DateTime?
+  status             String    @default("pending")
+  totalAmount        Decimal   @db.Decimal(10, 2)
+  notes              String?
+  cancellationReason String?   // Reason for cancellation if status is cancelled
+  cancellationNotes  String?   // Additional notes about cancellation
+  holdReturn         Boolean?  // Whether to hold inventory return for manual confirmation
+
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  orderItems    OrderItem[]
+  StockMovement StockMovement[]
+
+  // Indexes for performance
+  @@index([customerId])
+  @@index([status])
+  @@index([orderDate])
+  @@index([customerId, orderDate])
+  @@index([customerId, status])
+  @@index([cancellationReason])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  code        String  @unique
+  price       Decimal @db.Decimal(10, 2)
+  description String?
+
+  orderItems       OrderItem[]
+  inventoryItems   InventoryItem[]
+  stockMovements   StockMovement[]
+  monthlySummaries MonthlySummary[]
+
+  // Indexes for performance
+  @@index([name])
+}
+
+model InventoryLocation {
+  id          String  @id @default(cuid())
+  name        String  @unique // "My Warehouse", "Delivery Service", "Production"
+  description String?
+  isActive    Boolean @default(true)
+
+  inventoryItems InventoryItem[]
+  stockMovements StockMovement[]
+}
+
+model InventoryItem {
+  id         String   @id @default(cuid())
+  productId  String
+  locationId String
+  quantity   Int
+  updatedAt  DateTime @updatedAt
+
+  product  Product           @relation(fields: [productId], references: [id])
+  location InventoryLocation @relation(fields: [locationId], references: [id])
+
+  @@unique([productId, locationId]) // One record per product per location
+}
+
+model StockMovement {
+  id           String   @id @default(cuid())
+  productId    String
+  locationId   String? // null for production/consumption
+  movementType String // "production", "transfer", "sale", "adjustment"
+  quantity     Int // positive for increase, negative for decrease
+  fromLocation String? // for transfers
+  toLocation   String? // for transfers
+  notes        String?
+  orderId      String? // if related to an order
+  stockDate    DateTime @default(now()) // Date when stock was actually added/moved (user-specified)
+  createdAt    DateTime @default(now()) // System timestamp when record was created
+
+  product  Product            @relation(fields: [productId], references: [id])
+  location InventoryLocation? @relation(fields: [locationId], references: [id])
+  order    Order?             @relation(fields: [orderId], references: [id])
+}
+
+model MonthlySummary {
+  id            String   @id @default(cuid())
+  productId     String
+  month         Int // 1-12
+  year          Int
+  unitsProduced Int      @default(0)
+  unitsSold     Int      @default(0)
+  totalRevenue  Decimal  @default(0) @db.Decimal(10, 2)
+  runningTotal  Int      @default(0) // Cumulative production since start
+  createdAt     DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([productId, month, year])
+}
+
+model Admin {
+  id       Int    @id @default(1)
+  password String // bcrypt hashed password
+}
