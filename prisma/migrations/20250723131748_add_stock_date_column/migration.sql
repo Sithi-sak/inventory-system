@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "StockMovement" ADD COLUMN     "stockDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
