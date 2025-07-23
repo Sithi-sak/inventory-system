@@ -1,15 +1,15 @@
-./src/components/stock-history-modal.tsx:53:24
-Type error: Block-scoped variable 'fetchHistory' used before its declaration.
+Login error: Error [PrismaClientKnownRequestError]:
+Invalid `prisma.admin.findUnique()` invocation:
 
-51 | fetchHistory();
-52 | }
-
-> 53 | }, [open, productId, fetchHistory]);
-
-     |                        ^
-
-54 |
-55 | const fetchHistory = useCallback(async () => {
-56 | setLoading(true);
-Next.js build worker exited with code: 1 and signal: null
- ELIFECYCLE  Command failed with exit code 1.
+The table `public.Admin` does not exist in the current database.
+at hI.handleRequestError (.next/server/chunks/28.js:114:8027)
+at hI.handleAndLogRequestError (.next/server/chunks/28.js:114:7087)
+at hI.request (.next/server/chunks/28.js:114:6794)
+at async f (.next/server/chunks/28.js:126:7668)
+at async x (.next/server/app/api/auth/login/route.js:1:909)
+at async k (.next/server/app/api/auth/login/route.js:1:3979)
+at async g (.next/server/app/api/auth/login/route.js:1:4982) {
+code: 'P2021',
+clientVersion: '6.12.0',
+meta: [Object]
+}
