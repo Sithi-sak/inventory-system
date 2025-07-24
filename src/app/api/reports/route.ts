@@ -206,7 +206,7 @@ export async function GET(request: NextRequest) {
           productName: movement.product.name,
           locationName: movement.location?.name || 'Unknown',
           createdAt: movement.createdAt
-        }))
+        })),
     }
     
     return NextResponse.json(summary)

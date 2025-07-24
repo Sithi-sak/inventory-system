@@ -174,6 +174,7 @@ export default function Page() {
     limit: 10
   });
   const [hideDelivered, setHideDelivered] = useState(true); // Default to hiding delivered orders
+  const [hideReturned, setHideReturned] = useState(true); // Default to hiding returned cancellations
 
   const fetchCustomers = useCallback(async (searchFilters?: { name?: string; status?: string[] }) => {
     try {
@@ -182,7 +183,8 @@ export default function Page() {
       const searchParams = new URLSearchParams({
         page: (pagination.pageIndex + 1).toString(), // Convert 0-based to 1-based
         limit: pagination.pageSize.toString(),
-        hideDelivered: hideDelivered.toString()
+        hideDelivered: hideDelivered.toString(),
+        hideReturned: hideReturned.toString()
       });
       
       // Add search filter
@@ -204,12 +206,12 @@ export default function Page() {
     } catch (error) {
       console.error("Error fetching customers:", error);
     }
-  }, [pagination.pageIndex, pagination.pageSize, hideDelivered]);
+  }, [pagination.pageIndex, pagination.pageSize, hideDelivered, hideReturned]);
 
   // Initial load and when pagination/hideDelivered changes
   useEffect(() => {
     fetchCustomers();
-  }, [pagination.pageIndex, pagination.pageSize, hideDelivered, fetchCustomers]);
+  }, [pagination.pageIndex, pagination.pageSize, hideDelivered, hideReturned, fetchCustomers]);
 
   const handleAddCustomer = async (customer: {
     name: string;
@@ -475,20 +477,38 @@ export default function Page() {
       header: "Latest Status",
       accessorKey: "orders",
       cell: ({ row }) => {
-        const orders = row.getValue("orders") as Array<{
+        const allOrders = row.getValue("orders") as Array<{
           id: string;
           status: string;
+          cancellation?: { status: string } | null;
+          orderItems: Array<{
+            quantity: number;
+            product: { name: string };
+          }>;
         }>;
-        if (!orders.length) return <Badge variant="secondary">No orders</Badge>;
+        
+        if (!allOrders.length) return <Badge variant="secondary">No orders</Badge>;
 
-        const latestOrder = orders[0];
+        const latestOrder = allOrders[0];
         const customerId = row.original.id;
+        const cancellationStatus = latestOrder.cancellation?.status || null;
 
         if (latestOrder.status === "delivered") {
           return (
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                 ✓ Completed
+              </Badge>
+            </div>
+          );
+        }
+
+        // If cancelled and returned, treat like delivered (read-only)
+        if (latestOrder.status === "cancelled" && cancellationStatus === "returned") {
+          return (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
+                ✓ Returned
               </Badge>
             </div>
           );
@@ -503,6 +523,7 @@ export default function Page() {
             disabled={false}
             customerName={row.original.name}
             orderId={latestOrder.id}
+            cancellationStatus={cancellationStatus}
           />
         );
       },
@@ -527,12 +548,22 @@ export default function Page() {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => {
-        const hasDeliveredOrder = row.original.orders.some(order => order.status === "delivered");
+        const orders = row.original.orders as Array<{
+          id: string;
+          status: string;
+          cancellation?: { status: string } | null;
+        }>;
+        const hasDeliveredOrder = orders.some(order => order.status === "delivered");
+        const hasReturnedCancellation = orders.some(order => 
+          order.status === "cancelled" && order.cancellation?.status === "returned"
+        );
+        const isCompleted = hasDeliveredOrder || hasReturnedCancellation;
+        
         return (
           <RowActions
             onEdit={() => setEditingCustomer(row.original)}
             onDelete={() => handleDeleteCustomer(row.original.id)}
-            hasDeliveredOrder={hasDeliveredOrder}
+            hasDeliveredOrder={isCompleted}
           />
         );
       },
@@ -753,6 +784,14 @@ export default function Page() {
           >
             {hideDelivered ? "✓" : ""} Hide Completed
           </Button>
+          {/* Hide returned cancellations toggle */}
+          <Button
+            variant={hideReturned ? "default" : "outline"}
+            onClick={() => setHideReturned(!hideReturned)}
+            className="gap-2"
+          >
+            {hideReturned ? "✓" : ""} Hide Returned
+          </Button>
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -918,12 +957,22 @@ export default function Page() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-                const hasDeliveredOrder = row.original.orders.some(order => order.status === "delivered");
+                const orders = row.original.orders as Array<{
+                  id: string;
+                  status: string;
+                  cancellation?: { status: string } | null;
+                }>;
+                const hasDeliveredOrder = orders.some(order => order.status === "delivered");
+                const hasReturnedCancellation = orders.some(order => 
+                  order.status === "cancelled" && order.cancellation?.status === "returned"
+                );
+                const isCompleted = hasDeliveredOrder || hasReturnedCancellation;
+                
                 return (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className={hasDeliveredOrder ? "opacity-60 bg-muted/30" : ""}
+                    className={isCompleted ? "opacity-60 bg-muted/30" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="last:py-0">

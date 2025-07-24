@@ -379,6 +379,7 @@ export function ReportsContent() {
             </div>
           )}
         </div>
+
       </div>
 
       {/* Recent Activity */}

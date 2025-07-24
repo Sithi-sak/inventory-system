@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const statusFilter = searchParams.get('status') ? searchParams.get('status')!.split(',') : []
     const hideDelivered = searchParams.get('hideDelivered') === 'true'
+    const hideReturned = searchParams.get('hideReturned') === 'true'
     
     // Build where clause for filtering
     const whereClause: Prisma.CustomerWhereInput = {}
@@ -48,11 +49,28 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Hide customers with delivered orders
+    // Hide customers with delivered orders or returned cancellations
+    const hideConditions = []
+    
     if (hideDelivered) {
+      hideConditions.push({ status: 'delivered' })
+    }
+    
+    if (hideReturned) {
+      hideConditions.push({
+        AND: [
+          { status: 'cancelled' },
+          { cancellation: { status: 'returned' } }
+        ]
+      })
+    }
+    
+    if (hideConditions.length > 0) {
       whereClause.NOT = {
         orders: {
-          some: { status: 'delivered' }
+          some: {
+            OR: hideConditions
+          }
         }
       }
     }
@@ -71,6 +89,11 @@ export async function GET(request: NextRequest) {
             orderItems: {
               include: {
                 product: true
+              }
+            },
+            cancellation: {
+              select: {
+                status: true
               }
             }
           },

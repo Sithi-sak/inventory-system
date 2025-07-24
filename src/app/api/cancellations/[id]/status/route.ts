@@ -2,91 +2,50 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { PrismaClient } from '@/generated/prisma'
 
-export async function POST(
+export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ orderId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { orderId } = await params
+  const { id } = await params
   try {
     const body = await request.json()
-    const { reason, notes, holdReturn } = body
+    const { status } = body
 
-    if (!reason) {
+    if (!status || !['cancelled', 'returned'].includes(status)) {
       return NextResponse.json(
-        { error: 'Cancellation reason is required' },
+        { error: 'Invalid status. Must be "cancelled" or "returned"' },
         { status: 400 }
       )
     }
 
-    // Get current order to check status and handle inventory
-    const currentOrder = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        orderItems: {
-          include: {
-            product: true
-          }
-        },
-        customer: {
-          select: {
-            id: true,
-            name: true
-          }
+    // Update cancellation status and handle inventory movement
+    const updatedCancellation = await prisma.$transaction(async (tx) => {
+      // Get the cancellation with its items
+      const cancellation = await tx.orderCancellation.findUnique({
+        where: { id },
+        include: {
+          items: true
         }
+      })
+
+      if (!cancellation) {
+        throw new Error('Cancellation not found')
       }
-    })
 
-    if (!currentOrder) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      )
-    }
-
-    // Update the order with cancellation details and handle inventory movement
-    const updatedOrder = await prisma.$transaction(async (tx) => {
-      // Update order status
-      const order = await tx.order.update({
-        where: { id: orderId },
+      // Update the cancellation status
+      const updated = await tx.orderCancellation.update({
+        where: { id },
         data: {
-          status: 'cancelled',
-          cancellationReason: reason,
-          cancellationNotes: notes || null,
-          holdReturn: Boolean(holdReturn)
+          status,
+          returnedAt: status === 'returned' ? new Date() : null
         },
         include: {
-          customer: {
-            select: {
-              name: true
-            }
-          }
+          items: true
         }
       })
 
-      // Create detailed cancellation record
-      await tx.orderCancellation.create({
-        data: {
-          orderId: orderId,
-          customerId: currentOrder.customer.id,
-          customerName: currentOrder.customer.name,
-          cancellationReason: reason,
-          cancellationNotes: notes || null,
-          status: "cancelled", // Always start as cancelled since items stay in transit
-          returnedAt: null, // No return timestamp yet
-          items: {
-            create: currentOrder.orderItems.map(orderItem => ({
-              productId: orderItem.productId,
-              productName: orderItem.product.name,
-              productCode: orderItem.product.code,
-              quantity: orderItem.quantity,
-              unitPrice: orderItem.unitPrice
-            }))
-          }
-        }
-      })
-
-      // Handle inventory movement if not holding return
-      if (!holdReturn && currentOrder.status !== 'cancelled') {
+      // If marking as returned, move inventory from In Transit to Production
+      if (status === 'returned' && cancellation.status === 'cancelled') {
         // Get locations
         const locations = await tx.inventoryLocation.findMany({
           where: { isActive: true }
@@ -100,32 +59,42 @@ export async function POST(
         const productionLocationId = locationMap["Production"]
         const inTransitLocationId = locationMap["In Transit"]
 
-        // Move stock back from In Transit to Production for each order item
-        for (const orderItem of currentOrder.orderItems) {
-          const quantity = orderItem.quantity
-          await moveStock(tx, orderItem.productId, inTransitLocationId, productionLocationId, quantity, `Order ${orderId} cancelled - returned to production`)
+        if (!productionLocationId || !inTransitLocationId) {
+          throw new Error('Required locations (Production or In Transit) not found')
+        }
+
+        // Move stock back from In Transit to Production for each item
+        for (const item of cancellation.items) {
+          const quantity = item.quantity
+          await moveStock(tx, item.productId, inTransitLocationId, productionLocationId, quantity, `Cancellation ${id} returned to production`)
         }
       }
 
-      return order
+      return updated
     })
 
     return NextResponse.json({
       success: true,
-      order: updatedOrder
+      cancellation: {
+        ...updatedCancellation,
+        items: updatedCancellation.items.map(item => ({
+          ...item,
+          unitPrice: Number(item.unitPrice) // Convert Decimal to number
+        }))
+      }
     })
   } catch (error) {
-    console.error('Error canceling order:', error)
+    console.error('Error updating cancellation status:', error)
     
     if (error instanceof Error && error.message.includes('Record to update not found')) {
       return NextResponse.json(
-        { error: 'Order not found' },
+        { error: 'Cancellation not found' },
         { status: 404 }
       )
     }
     
     return NextResponse.json(
-      { error: 'Failed to cancel order' },
+      { error: 'Failed to update cancellation status' },
       { status: 500 }
     )
   }

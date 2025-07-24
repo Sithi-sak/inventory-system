@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,16 +9,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 type Product = {
   id: string;
@@ -67,48 +67,65 @@ interface EditCustomerModalProps {
     location: string;
     preferredDeliveryTime?: string;
     notes?: string;
-    orderItems?: Array<{ productId: string; quantity: number; unitPrice: number }>;
+    orderItems?: Array<{
+      productId: string;
+      quantity: number;
+      unitPrice: number;
+    }>;
   }) => void;
 }
 
-export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustomer }: EditCustomerModalProps) {
+export function EditCustomerModal({
+  customer,
+  open,
+  onOpenChange,
+  onUpdateCustomer,
+}: EditCustomerModalProps) {
   const [formData, setFormData] = useState({
     name: customer.name,
     phone: customer.phone,
     location: customer.location,
     preferredDeliveryTime: customer.preferredDeliveryTime || "",
     notes: customer.notes || "",
-  })
+  });
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<Array<{ productId: string; code: string; name: string; quantity: number; unitPrice: number }>>([])
-  const [currentProduct, setCurrentProduct] = useState("")
-  const [currentQuantity, setCurrentQuantity] = useState("1")
-  const [productSearch, setProductSearch] = useState("")
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<
+    Array<{
+      productId: string;
+      code: string;
+      name: string;
+      quantity: number;
+      unitPrice: number;
+    }>
+  >([]);
+  const [currentProduct, setCurrentProduct] = useState("");
+  const [currentQuantity, setCurrentQuantity] = useState("1");
+  const [productSearch, setProductSearch] = useState("");
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   // Fetch products from database
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        setLoading(true)
-        const res = await fetch('/api/products')
+        setLoading(true);
+        const res = await fetch("/api/products");
         if (res.ok) {
-          const data = await res.json()
-          setProducts(data)
+          const data = await res.json();
+          setProducts(data);
         }
       } catch (error) {
-        console.error('Error fetching products:', error)
+        console.error("Error fetching products:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
     if (open) {
-      fetchProducts()
+      fetchProducts();
     }
-  }, [open])
+  }, [open]);
 
   // Update form data when customer changes
   useEffect(() => {
@@ -118,80 +135,90 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
       location: customer.location,
       preferredDeliveryTime: customer.preferredDeliveryTime || "",
       notes: customer.notes || "",
-    })
-    
+    });
+
     // Convert existing orders to selected products
     if (customer.orders && customer.orders.length > 0) {
-      const latestOrder = customer.orders[0]
-      const orderProducts = latestOrder.orderItems.map(item => ({
+      const latestOrder = customer.orders[0];
+      const orderProducts = latestOrder.orderItems.map((item) => ({
         productId: item.product.id,
         code: item.product.code,
         name: item.product.name,
         quantity: item.quantity,
-        unitPrice: item.unitPrice
-      }))
-      setSelectedProducts(orderProducts)
+        unitPrice: item.unitPrice,
+      }));
+      setSelectedProducts(orderProducts);
     } else {
-      setSelectedProducts([])
+      setSelectedProducts([]);
     }
-  }, [customer])
+  }, [customer]);
 
   // Calculate total when selected products change
   useEffect(() => {
-    const newTotal = selectedProducts.reduce((sum, product) => sum + (product.unitPrice * product.quantity), 0)
-    setTotal(newTotal)
-  }, [selectedProducts])
+    const newTotal = selectedProducts.reduce(
+      (sum, product) => sum + product.unitPrice * product.quantity,
+      0
+    );
+    setTotal(newTotal);
+  }, [selectedProducts]);
 
   // Filter products based on search
-  const filteredProducts = products.filter(product => 
-    product.code.toLowerCase().includes(productSearch.toLowerCase()) ||
-    product.name.toLowerCase().includes(productSearch.toLowerCase())
-  )
+  const filteredProducts = products.filter(
+    (product) =>
+      product.code.toLowerCase().includes(productSearch.toLowerCase()) ||
+      product.name.toLowerCase().includes(productSearch.toLowerCase())
+  );
 
   const addProduct = () => {
     if (currentProduct && currentQuantity) {
-      const product = products.find(p => p.id === currentProduct)
+      const product = products.find((p) => p.id === currentProduct);
       if (product) {
-        const quantity = parseInt(currentQuantity) || 1
-        
+        const quantity = parseInt(currentQuantity) || 1;
+
         // Check if product already exists in selectedProducts
-        const existingProductIndex = selectedProducts.findIndex(sp => sp.productId === product.id)
-        
+        const existingProductIndex = selectedProducts.findIndex(
+          (sp) => sp.productId === product.id
+        );
+
         if (existingProductIndex !== -1) {
           // Product exists, merge quantities
-          setSelectedProducts(prev => prev.map((sp, index) => 
-            index === existingProductIndex 
-              ? { ...sp, quantity: sp.quantity + quantity }
-              : sp
-          ))
+          setSelectedProducts((prev) =>
+            prev.map((sp, index) =>
+              index === existingProductIndex
+                ? { ...sp, quantity: sp.quantity + quantity }
+                : sp
+            )
+          );
         } else {
           // Product doesn't exist, add new
-          setSelectedProducts(prev => [...prev, {
-            productId: product.id,
-            code: product.code,
-            name: product.name,
-            quantity: quantity,
-            unitPrice: Number(product.price)
-          }])
+          setSelectedProducts((prev) => [
+            ...prev,
+            {
+              productId: product.id,
+              code: product.code,
+              name: product.name,
+              quantity: quantity,
+              unitPrice: Number(product.price),
+            },
+          ]);
         }
-        
-        setCurrentProduct("")
-        setCurrentQuantity("1")
-        setProductSearch("")
+
+        setCurrentProduct("");
+        setCurrentQuantity("1");
+        setProductSearch("");
       }
     }
-  }
+  };
 
   const removeProduct = (index: number) => {
-    setSelectedProducts(prev => prev.filter((_, i) => i !== index))
-  }
-
+    setSelectedProducts((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!formData.name || !formData.phone || !formData.location) {
-      return
+      return;
     }
 
     const updatedCustomer = {
@@ -201,27 +228,27 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
       location: formData.location,
       preferredDeliveryTime: formData.preferredDeliveryTime,
       notes: formData.notes,
-      orderItems: selectedProducts.map(product => ({
+      orderItems: selectedProducts.map((product) => ({
         productId: product.productId,
         quantity: product.quantity,
-        unitPrice: product.unitPrice
-      }))
-    }
+        unitPrice: product.unitPrice,
+      })),
+    };
 
-    onUpdateCustomer?.(updatedCustomer)
-    onOpenChange(false)
-  }
+    onUpdateCustomer?.(updatedCustomer);
+    onOpenChange(false);
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
-    }))
-  }
+      [field]: value,
+    }));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Customer</DialogTitle>
           <DialogDescription>
@@ -261,12 +288,16 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-customer-delivery-time">Preferred Delivery Time</Label>
+            <Label htmlFor="edit-customer-delivery-time">
+              Preferred Delivery Time
+            </Label>
             <Input
               id="edit-customer-delivery-time"
               placeholder="Enter preferred delivery time"
               value={formData.preferredDeliveryTime}
-              onChange={(e) => handleInputChange("preferredDeliveryTime", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("preferredDeliveryTime", e.target.value)
+              }
             />
           </div>
           <div className="space-y-2">
@@ -292,31 +323,48 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
               </div>
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <Select value={currentProduct} onValueChange={setCurrentProduct}>
+                  <Select
+                    value={currentProduct}
+                    onValueChange={setCurrentProduct}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a product" />
                     </SelectTrigger>
                     <SelectContent>
                       {filteredProducts.map((product) => {
-                        const fulfillmentStock = product.locationStock?.["Fulfillment"] || 0;
+                        const fulfillmentStock =
+                          product.locationStock?.["Fulfillment"] || 0;
                         const isOutOfStock = fulfillmentStock <= 0;
-                        
+
                         return (
-                          <SelectItem 
-                            key={product.id} 
+                          <SelectItem
+                            key={product.id}
                             value={product.id}
                             disabled={isOutOfStock}
                           >
                             <div className="flex justify-between items-center w-full">
-                              <span className={`font-medium ${isOutOfStock ? "text-muted-foreground line-through" : ""}`}>
-                                {product.code} - {product.name} - ${Number(product.price).toFixed(2)}
+                              <span
+                                className={`font-medium ${
+                                  isOutOfStock
+                                    ? "text-muted-foreground line-through"
+                                    : ""
+                                }`}
+                              >
+                                {product.code} - {product.name} - $
+                                {Number(product.price).toFixed(2)}
                               </span>
-                              <span className={`text-xs ml-3 ${
-                                isOutOfStock ? "text-red-500" : 
-                                fulfillmentStock <= 10 ? "text-amber-500" : 
-                                "text-green-600"
-                              }`}>
-                                {isOutOfStock ? "Out of Stock" : `Ready: ${fulfillmentStock}`}
+                              <span
+                                className={`text-xs ml-3 ${
+                                  isOutOfStock
+                                    ? "text-red-500"
+                                    : fulfillmentStock <= 10
+                                    ? "text-amber-500"
+                                    : "text-green-600"
+                                }`}
+                              >
+                                {isOutOfStock
+                                  ? "Out of Stock"
+                                  : `Ready: ${fulfillmentStock}`}
                               </span>
                             </div>
                           </SelectItem>
@@ -334,16 +382,25 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
                     onChange={(e) => setCurrentQuantity(e.target.value)}
                   />
                 </div>
-                <Button type="button" onClick={addProduct} disabled={!currentProduct}>
+                <Button
+                  type="button"
+                  onClick={addProduct}
+                  disabled={!currentProduct}
+                >
                   Add
                 </Button>
               </div>
-              
+
               {selectedProducts.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Selected Products:</Label>
+                  <Label className="text-sm font-medium">
+                    Selected Products:
+                  </Label>
                   {selectedProducts.map((product, index) => (
-                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-muted p-2 rounded"
+                    >
                       <span className="text-sm">
                         {product.code} - {product.name} × {product.quantity}
                       </span>
@@ -377,7 +434,11 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit">Update Customer</Button>
@@ -385,5 +446,5 @@ export function EditCustomerModal({ customer, open, onOpenChange, onUpdateCustom
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -27,6 +27,7 @@ import {
   Users,
   BarChart3,
   Truck,
+  XCircle,
 } from "lucide-react";
 
 // This is sample data.
@@ -66,6 +67,11 @@ const data = {
           title: "Reports",
           url: "/dashboard/reports",
           icon: BarChart3,
+        },
+        {
+          title: "Cancellations",
+          url: "/dashboard/cancellations",
+          icon: XCircle,
         },
       ],
     },

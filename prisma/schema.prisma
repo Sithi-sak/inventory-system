@@ -19,6 +19,7 @@ model Customer {
   createdAt             DateTime @default(now())
 
   orders Order[]
+  orderCancellations OrderCancellation[]
 
   // Indexes for performance
   @@index([name])
@@ -41,6 +42,7 @@ model Order {
   customer      Customer        @relation(fields: [customerId], references: [id])
   orderItems    OrderItem[]
   StockMovement StockMovement[]
+  cancellation  OrderCancellation?
 
   // Indexes for performance
   @@index([customerId])
@@ -69,10 +71,11 @@ model Product {
   price       Decimal @db.Decimal(10, 2)
   description String?
 
-  orderItems       OrderItem[]
-  inventoryItems   InventoryItem[]
-  stockMovements   StockMovement[]
-  monthlySummaries MonthlySummary[]
+  orderItems         OrderItem[]
+  inventoryItems     InventoryItem[]
+  stockMovements     StockMovement[]
+  monthlySummaries   MonthlySummary[]
+  cancellationItems  OrderCancellationItem[]
 
   // Indexes for performance
   @@index([name])
@@ -138,4 +141,37 @@ model MonthlySummary {
 model Admin {
   id       Int    @id @default(1)
   password String // bcrypt hashed password
+}
+
+model OrderCancellation {
+  id                String   @id @default(cuid())
+  orderId           String   @unique // One cancellation per order
+  customerId        String
+  customerName      String   // Snapshot of customer name at time of cancellation
+  cancellationReason String
+  cancellationNotes String?
+  cancelledAt       DateTime @default(now())
+  status            String   @default("cancelled") // "cancelled" or "returned"
+  returnedAt        DateTime? // When items were physically returned
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  items    OrderCancellationItem[]
+
+  @@index([customerId])
+  @@index([cancelledAt])
+  @@index([status])
+}
+
+model OrderCancellationItem {
+  id            String @id @default(cuid())
+  cancellationId String
+  productId     String
+  productName   String  // Snapshot of product name
+  productCode   String  // Snapshot of product code
+  quantity      Int
+  unitPrice     Decimal @db.Decimal(10, 2)
+
+  cancellation OrderCancellation @relation(fields: [cancellationId], references: [id])
+  product      Product           @relation(fields: [productId], references: [id])
 }

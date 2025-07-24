@@ -51,6 +51,7 @@ interface StatusSelectProps {
   disabled?: boolean
   customerName?: string
   orderId?: string
+  cancellationStatus?: string | null // "cancelled" or "returned" or null
 }
 
 export function StatusSelect({ value, onValueChange, disabled, customerName, orderId }: StatusSelectProps) {
@@ -69,6 +70,30 @@ export function StatusSelect({ value, onValueChange, disabled, customerName, ord
       // Confirm delivery (final status)
       setPendingStatus(newStatus)
       setShowConfirmDialog(true)
+    } else if (value === "cancelled" && newStatus !== "cancelled" && orderId) {
+      // Changing from cancelled to another status - need to remove cancellation record
+      setIsUpdating(true)
+      try {
+        // First remove the cancellation record
+        const uncancelResponse = await fetch(`/api/orders/${orderId}/uncancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        
+        if (!uncancelResponse.ok) {
+          const errorData = await uncancelResponse.json().catch(() => ({}))
+          console.error('Uncancel API error:', errorData)
+          throw new Error(errorData.details || errorData.error || 'Failed to remove cancellation')
+        }
+        
+        // Then update the order status
+        await onValueChange(newStatus)
+      } catch (error) {
+        console.error('Error in uncancel flow:', error)
+        alert(`Failed to change status: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      } finally {
+        setIsUpdating(false)
+      }
     } else {
       // Handle other status changes normally
       setIsUpdating(true)
@@ -93,7 +118,7 @@ export function StatusSelect({ value, onValueChange, disabled, customerName, ord
     }
   }
 
-  const handleCancellationConfirm = async (reason: string, notes?: string, holdReturn?: boolean) => {
+  const handleCancellationConfirm = async (reason: string, notes?: string) => {
     setIsLoading(true)
     try {
       const response = await fetch(`/api/orders/${orderId}/cancel`, {
@@ -101,7 +126,7 @@ export function StatusSelect({ value, onValueChange, disabled, customerName, ord
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ reason, notes, holdReturn })
+        body: JSON.stringify({ reason, notes, holdReturn: true }) // Always hold return
       })
 
       if (!response.ok) {

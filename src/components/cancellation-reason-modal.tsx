@@ -6,12 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 
 interface CancellationReasonModalProps {
   isOpen: boolean
   onClose: () => void
-  onConfirm: (reason: string, notes?: string, holdReturn?: boolean) => void
+  onConfirm: (reason: string, notes?: string) => void
   customerName: string
   isLoading?: boolean
 }
@@ -37,21 +36,18 @@ export function CancellationReasonModal({
 }: CancellationReasonModalProps) {
   const [selectedReason, setSelectedReason] = useState<string>('')
   const [notes, setNotes] = useState<string>('')
-  const [holdReturn, setHoldReturn] = useState<boolean>(false)
 
   const handleConfirm = () => {
     if (!selectedReason) return
-    onConfirm(selectedReason, notes.trim() || undefined, holdReturn)
+    onConfirm(selectedReason, notes.trim() || undefined)
     // Reset form
     setSelectedReason('')
     setNotes('')
-    setHoldReturn(false)
   }
 
   const handleClose = () => {
     setSelectedReason('')
     setNotes('')
-    setHoldReturn(false)
     onClose()
   }
 
@@ -96,23 +92,10 @@ export function CancellationReasonModal({
             />
           </div>
 
-          <div className="flex items-start space-x-2 p-3 bg-muted/50 rounded-lg">
-            <Checkbox
-              id="holdReturn"
-              checked={holdReturn}
-              onCheckedChange={(checked) => setHoldReturn(checked === true)}
-            />
-            <div className="grid gap-1.5 leading-none">
-              <Label 
-                htmlFor="holdReturn"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Hold inventory return (awaiting physical confirmation)
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Keep stock in &quot;In Transit&quot; until you manually confirm the product has been physically returned
-              </p>
-            </div>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-sm font-medium text-muted-foreground">
+              📦 Items will remain &quot;In Transit&quot; until physically returned and confirmed
+            </p>
           </div>
         </div>
 
